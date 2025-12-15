@@ -37,7 +37,7 @@
     "lint": "biome lint .",
     "playground": "bun playground/redis.ts",
     "prepack": "bun run build",
-    "release": "bunx semantic-release",
+    "release": "semantic-release",
     "test": "bun run check && bun run test:types && bunx vitest run",
     "test:types": "bunx tsc --noEmit --pretty false"
   },
