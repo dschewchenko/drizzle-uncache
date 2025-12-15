@@ -59,7 +59,7 @@
     "drizzle-orm": "^0.45.1",
     "elysia": "^1.4.19",
     "ioredis": "^5.8.2",
-    "semantic-release": "^24.2.9",
+    "semantic-release": "^25.0.2",
     "typescript": "^5.9.3",
     "unbuild": "^3.6.1",
     "unstorage": "^1.17.3",
