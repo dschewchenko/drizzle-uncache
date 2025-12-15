@@ -1,6 +1,6 @@
 {
   "name": "drizzle-uncache",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Cache adapter for Drizzle ORM powered by unstorage",
   "repository": {
     "type": "git",
