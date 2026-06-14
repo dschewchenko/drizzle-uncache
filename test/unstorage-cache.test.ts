@@ -1,3 +1,4 @@
+import { aliasedTable } from "drizzle-orm";
 import type { CacheConfig } from "drizzle-orm/cache/core/types";
 import { pgTable, serial, text } from "drizzle-orm/pg-core";
 import { createStorage } from "unstorage";
@@ -54,6 +55,21 @@ describe("unstorage cache adapter", () => {
     await expect(cache.get("k1", ["users"], false, true)).resolves.toBeUndefined();
   });
 
+  it("invalidates by aliased Table object using the original table name", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    const users = pgTable("users", {
+      id: serial("id").primaryKey(),
+      name: text("name"),
+    });
+    const usersAlias = aliasedTable(users, "u");
+
+    await cache.put("k1", [{ n: 1 }], ["users"], false, { ex: 60 });
+    await cache.onMutate({ tables: usersAlias });
+    await expect(cache.get("k1", ["users"], false, true)).resolves.toBeUndefined();
+  });
+
   it("invalidates multi-table queries when any related table mutates", async () => {
     const storage = createStorage();
     const cache = unstorageCache({ storage, config: { ex: 60 } });
@@ -87,6 +103,41 @@ describe("unstorage cache adapter", () => {
     await cache.onMutate({ tags: "tagged" });
 
     await expect(cache.get("tagged", [], true, false)).resolves.toBeUndefined();
+    const keys = await storage.getKeys();
+    expect(keys.some((key) => key.includes("tagged"))).toBe(false);
+  });
+
+  it("removes tag map entries when table invalidation removes tagged queries", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    await cache.put("tagged", [{ ok: 1 }], ["users"], true, { ex: 60 });
+    await expect(storage.getKeys()).resolves.toEqual(
+      expect.arrayContaining([expect.stringContaining("__tagsMap__:tagged")]),
+    );
+
+    await cache.onMutate({ tables: "users" });
+
+    await expect(cache.get("tagged", ["users"], true, true)).resolves.toBeUndefined();
+    const keys = await storage.getKeys();
+    expect(keys.some((key) => key.includes("tagged"))).toBe(false);
+  });
+
+  it("cleans stale tag map entries when a tagged value is already missing", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    await cache.put("tagged", [{ ok: 1 }], ["users"], true, { ex: 60 });
+    const valueKey = (await storage.getKeys()).find(
+      (key) => key.includes("__CT__") && key.includes(":t:tagged"),
+    );
+
+    if (!valueKey) {
+      throw new Error("Expected tagged value key");
+    }
+    await storage.removeItem(valueKey);
+
+    await expect(cache.get("tagged", ["users"], true, true)).resolves.toBeUndefined();
     const keys = await storage.getKeys();
     expect(keys.some((key) => key.includes("tagged"))).toBe(false);
   });

@@ -2,7 +2,7 @@ import type { CacheConfig } from "drizzle-orm/cache/core/types";
 import type { Driver, Storage } from "unstorage";
 
 export type CacheEntry = {
-  value: unknown;
+  value: unknown[];
   expiresAt?: number;
   tables?: string[];
 };
@@ -11,18 +11,18 @@ export type UnstorageCacheOptions = {
   /**
    * Optional pre-configured storage instance.
    *
-   * @defaults [memory driver](https://unstorage.unjs.io/drivers/memory)
+   * @default [memory driver](https://unstorage.unjs.io/drivers/memory)
    */
   storage?: Storage;
   /**
    * Driver to create a storage instance with.
    *
-   * @defaults [memory driver](https://unstorage.unjs.io/drivers/memory)
+   * @default [memory driver](https://unstorage.unjs.io/drivers/memory)
    */
   driver?: Driver;
   /**
    * Prefix for cache keys inside storage.
-   * Defaults to `dc`.
+   * Defaults to `drizzle:cache`.
    */
   base?: string;
   /**

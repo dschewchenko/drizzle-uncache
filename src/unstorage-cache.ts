@@ -64,6 +64,14 @@ export class UnstorageCache extends Cache {
       const entry = await this.storage.getItem<CacheEntry>(valueKey);
 
       if (!entry) {
+        await this.dropEntry({
+          autoInvalidate,
+          isTag,
+          keyEnc,
+          tablesKey: tablesKey ?? undefined,
+          fallbackTables: tablesKey ? decodeTablesKey(tablesKey) : [],
+          removeTagMap: true,
+        });
         this.log(`MISS tag ${key}`);
         return undefined;
       }
@@ -84,7 +92,7 @@ export class UnstorageCache extends Cache {
       }
 
       this.log(`HIT tag ${key}`);
-      return entry.value as unknown[] | undefined;
+      return entry.value;
     }
 
     const autoInvalidate = isAutoInvalidate ?? tables.length > 0;
@@ -111,12 +119,12 @@ export class UnstorageCache extends Cache {
     }
 
     this.log(`HIT query ${key}`);
-    return entry.value as unknown[] | undefined;
+    return entry.value;
   }
 
   override async put(
     key: string,
-    response: unknown,
+    response: unknown[],
     tables: string[],
     isTag: boolean,
     config?: CacheConfig,
@@ -211,13 +219,13 @@ export class UnstorageCache extends Cache {
     if (!tables.length) return;
 
     const indexKeys = new Set<string>();
-    for (const table of tables) {
-      const tableEnc = encode(table);
-      const prefix = `${INDEX_PREFIX}:${tableEnc}:`;
-      const keys = await this.storage.getKeys(prefix);
-      keys.forEach((k) => {
-        indexKeys.add(k);
-      });
+    const tableIndexKeys = await Promise.all(
+      tables.map((table) => this.storage.getKeys(`${INDEX_PREFIX}:${encode(table)}:`)),
+    );
+    for (const keys of tableIndexKeys) {
+      for (const key of keys) {
+        indexKeys.add(key);
+      }
     }
 
     if (!indexKeys.size) {
@@ -226,15 +234,20 @@ export class UnstorageCache extends Cache {
     }
 
     const valueKeys = new Set<string>();
+    const tagMapKeys = new Set<string>();
     for (const indexKey of indexKeys) {
       const parsed = parseIndexKey(indexKey);
       if (!parsed) continue;
       valueKeys.add(this.valueKey(true, parsed.isTag, parsed.keyEnc, parsed.tablesKey));
+      if (parsed.isTag) {
+        tagMapKeys.add(this.tagMapKey(parsed.keyEnc));
+      }
     }
 
     await Promise.all([
       ...Array.from(indexKeys).map((k) => this.storage.removeItem(k)),
       ...Array.from(valueKeys).map((k) => this.storage.removeItem(k)),
+      ...Array.from(tagMapKeys).map((k) => this.storage.removeItem(k)),
     ]);
 
     this.log(`INVALIDATE TABLES ${tables.join(",")} removed=${valueKeys.size}`);
