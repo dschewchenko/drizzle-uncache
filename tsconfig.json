@@ -15,5 +15,12 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src", "test", "build.config.ts", "vitest.config.ts", "release.config.js"]
+  "include": [
+    "src",
+    "test",
+    "playground",
+    "build.config.ts",
+    "vitest.config.ts",
+    "release.config.js"
+  ]
 }
