@@ -55,8 +55,8 @@ const db = drizzle(
     }
 
     if (method === "get") {
-      const row = stmt.values(...params)[0] ?? null;
-      return { rows: row as unknown as unknown[] };
+      const row = stmt.values(...params)[0];
+      return { rows: Array.isArray(row) ? row : [] };
     }
 
     return { rows: stmt.values(...params) };

@@ -1,4 +1,3 @@
-import { is, Table } from "drizzle-orm";
 import type { MutationOption } from "drizzle-orm/cache/core";
 import type { CacheConfig } from "drizzle-orm/cache/core/types";
 
@@ -20,15 +19,15 @@ export function pickConfigWithTtl(config?: CacheConfig): CacheConfig | undefined
 export function normalizeTables(tables: MutationOption["tables"]): string[] {
   if (!tables) return [];
   const list = Array.isArray(tables) ? tables : [tables];
-  return list.map((table) =>
-    is(table, Table) ? String(Reflect.get(table, ORIGINAL_NAME)) : String(table),
-  );
+  return list.map((table) => {
+    if (typeof table === "string") return table;
+    return String(Reflect.get(table, ORIGINAL_NAME));
+  });
 }
 
 export function normalizeTags(tags: MutationOption["tags"]): string[] {
   if (!tags) return [];
-  const list = Array.isArray(tags) ? tags : [tags];
-  return list.map((tag) => `${tag}`);
+  return Array.isArray(tags) ? tags : [tags];
 }
 
 export function encode(value: string): string {
@@ -39,7 +38,7 @@ export function makeTablesKey(tables: string[]): string {
   if (!tables.length) return "";
   return tables
     .map((table) => encode(table))
-    .sort()
+    .toSorted()
     .join(",");
 }
 

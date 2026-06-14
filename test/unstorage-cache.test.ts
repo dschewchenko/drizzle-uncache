@@ -132,8 +132,10 @@ describe("unstorage cache adapter", () => {
       (key) => key.includes("__CT__") && key.includes(":t:tagged"),
     );
 
-    expect(valueKey).toBeDefined();
-    await storage.removeItem(valueKey as string);
+    if (!valueKey) {
+      throw new Error("Expected tagged value key");
+    }
+    await storage.removeItem(valueKey);
 
     await expect(cache.get("tagged", ["users"], true, true)).resolves.toBeUndefined();
     const keys = await storage.getKeys();

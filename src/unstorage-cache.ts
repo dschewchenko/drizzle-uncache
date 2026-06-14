@@ -92,7 +92,7 @@ export class UnstorageCache extends Cache {
       }
 
       this.log(`HIT tag ${key}`);
-      return entry.value as unknown[] | undefined;
+      return entry.value;
     }
 
     const autoInvalidate = isAutoInvalidate ?? tables.length > 0;
@@ -119,12 +119,12 @@ export class UnstorageCache extends Cache {
     }
 
     this.log(`HIT query ${key}`);
-    return entry.value as unknown[] | undefined;
+    return entry.value;
   }
 
   override async put(
     key: string,
-    response: unknown,
+    response: unknown[],
     tables: string[],
     isTag: boolean,
     config?: CacheConfig,
@@ -219,13 +219,13 @@ export class UnstorageCache extends Cache {
     if (!tables.length) return;
 
     const indexKeys = new Set<string>();
-    for (const table of tables) {
-      const tableEnc = encode(table);
-      const prefix = `${INDEX_PREFIX}:${tableEnc}:`;
-      const keys = await this.storage.getKeys(prefix);
-      keys.forEach((k) => {
-        indexKeys.add(k);
-      });
+    const tableIndexKeys = await Promise.all(
+      tables.map((table) => this.storage.getKeys(`${INDEX_PREFIX}:${encode(table)}:`)),
+    );
+    for (const keys of tableIndexKeys) {
+      for (const key of keys) {
+        indexKeys.add(key);
+      }
     }
 
     if (!indexKeys.size) {
