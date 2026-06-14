@@ -22,7 +22,7 @@ export type UnstorageCacheOptions = {
   driver?: Driver;
   /**
    * Prefix for cache keys inside storage.
-   * Defaults to `dc`.
+   * Defaults to `drizzle:cache`.
    */
   base?: string;
   /**
