@@ -1,7 +1,7 @@
 {
   "name": "drizzle-uncache",
   "version": "1.0.0",
-  "description": "Cache adapter for Drizzle ORM powered by unstorage",
+  "description": "Cache adapter for Drizzle ORM v1 powered by unstorage",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dschewchenko/drizzle-uncache.git"
@@ -42,7 +42,7 @@
     "test:types": "bunx tsc --noEmit --pretty false"
   },
   "peerDependencies": {
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^1.0.0-rc.3",
     "unstorage": "^1.17.3"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "@types/bun": "^1.3.4",
     "@types/node": "^25.0.1",
     "@vitest/coverage-v8": "^4.0.15",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "1.0.0-rc.3",
     "elysia": "^1.4.19",
     "ioredis": "^5.8.2",
     "semantic-release": "^25.0.2",

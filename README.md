@@ -1,6 +1,6 @@
 # drizzle-uncache
 
-Cache adapter for Drizzle ORM powered by `unstorage`.
+Cache adapter for Drizzle ORM v1 powered by `unstorage`.
 
 Plug in any `unstorage` driver as the cache backend so you do not have to hunt for a specific Drizzle cache implementation.
 
@@ -13,16 +13,16 @@ https://orm.drizzle.team/docs/cache#custom-cache
 
 ```sh
 # bun
-bun add drizzle-uncache unstorage drizzle-orm
+bun add drizzle-uncache unstorage drizzle-orm@rc
 
 # pnpm
-pnpm add drizzle-uncache unstorage drizzle-orm
+pnpm add drizzle-uncache unstorage drizzle-orm@rc
 
 # npm
-npm install drizzle-uncache unstorage drizzle-orm
+npm install drizzle-uncache unstorage drizzle-orm@rc
 
 # yarn
-yarn add drizzle-uncache unstorage drizzle-orm
+yarn add drizzle-uncache unstorage drizzle-orm@rc
 ```
 
 ## Example usage
@@ -50,11 +50,10 @@ await client.connect()
 
 const db = drizzle(client, { schema: { users }, cache })
 
-const all = await db
-  .select()
-  .from(users)
-  .$withCache({ config: { ex: 60 } })
-  .all()
+const all = await db.select().from(users).$withCache({ config: { ex: 60 } })
+
+await db.$cache.invalidate({ tables: users })
+await db.$cache.invalidate({ tags: "custom_key" })
 ```
 
 ## Options
@@ -65,6 +64,7 @@ const all = await db
 - `config`: default `CacheConfig` (per-query overrides it)
   - TTL fields (`ex`/`px`/`exat`/`pxat`) become an `expiresAt` stored with the payload, so entries expire even if a driver ignores TTL options
   - `keepTtl` reuses a still-valid `expiresAt` from the existing entry instead of recomputing TTL
+  - `hexOptions` is accepted through Drizzle's `CacheConfig` type but is Redis-specific and is not used by this adapter
 - `global`: cache all queries by default
 - `debug`: enable debug logging (HIT/MISS + PUT/INVALIDATE)
 
