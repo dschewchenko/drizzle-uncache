@@ -1,6 +1,8 @@
-import { getTableName, is, Table } from "drizzle-orm";
+import { is, Table } from "drizzle-orm";
 import type { MutationOption } from "drizzle-orm/cache/core";
 import type { CacheConfig } from "drizzle-orm/cache/core/types";
+
+const ORIGINAL_NAME = Symbol.for("drizzle:OriginalName");
 
 export function pickConfigWithTtl(config?: CacheConfig): CacheConfig | undefined {
   if (!config) return undefined;
@@ -18,7 +20,9 @@ export function pickConfigWithTtl(config?: CacheConfig): CacheConfig | undefined
 export function normalizeTables(tables: MutationOption["tables"]): string[] {
   if (!tables) return [];
   const list = Array.isArray(tables) ? tables : [tables];
-  return list.map((table) => (is(table, Table) ? getTableName(table) : String(table)));
+  return list.map((table) =>
+    is(table, Table) ? String(Reflect.get(table, ORIGINAL_NAME)) : String(table),
+  );
 }
 
 export function normalizeTags(tags: MutationOption["tags"]): string[] {

@@ -1,3 +1,4 @@
+import { aliasedTable } from "drizzle-orm";
 import type { CacheConfig } from "drizzle-orm/cache/core/types";
 import { pgTable, serial, text } from "drizzle-orm/pg-core";
 import { createStorage } from "unstorage";
@@ -51,6 +52,21 @@ describe("unstorage cache adapter", () => {
 
     await cache.put("k1", [{ n: 1 }], ["users"], false, { ex: 60 });
     await cache.onMutate({ tables: users });
+    await expect(cache.get("k1", ["users"], false, true)).resolves.toBeUndefined();
+  });
+
+  it("invalidates by aliased Table object using the original table name", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    const users = pgTable("users", {
+      id: serial("id").primaryKey(),
+      name: text("name"),
+    });
+    const usersAlias = aliasedTable(users, "u");
+
+    await cache.put("k1", [{ n: 1 }], ["users"], false, { ex: 60 });
+    await cache.onMutate({ tables: usersAlias });
     await expect(cache.get("k1", ["users"], false, true)).resolves.toBeUndefined();
   });
 
