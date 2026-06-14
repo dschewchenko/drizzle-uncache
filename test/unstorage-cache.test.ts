@@ -107,6 +107,39 @@ describe("unstorage cache adapter", () => {
     expect(keys.some((key) => key.includes("tagged"))).toBe(false);
   });
 
+  it("removes tag map entries when table invalidation removes tagged queries", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    await cache.put("tagged", [{ ok: 1 }], ["users"], true, { ex: 60 });
+    await expect(storage.getKeys()).resolves.toEqual(
+      expect.arrayContaining([expect.stringContaining("__tagsMap__:tagged")]),
+    );
+
+    await cache.onMutate({ tables: "users" });
+
+    await expect(cache.get("tagged", ["users"], true, true)).resolves.toBeUndefined();
+    const keys = await storage.getKeys();
+    expect(keys.some((key) => key.includes("tagged"))).toBe(false);
+  });
+
+  it("cleans stale tag map entries when a tagged value is already missing", async () => {
+    const storage = createStorage();
+    const cache = unstorageCache({ storage, config: { ex: 60 } });
+
+    await cache.put("tagged", [{ ok: 1 }], ["users"], true, { ex: 60 });
+    const valueKey = (await storage.getKeys()).find(
+      (key) => key.includes("__CT__") && key.includes(":t:tagged"),
+    );
+
+    expect(valueKey).toBeDefined();
+    await storage.removeItem(valueKey as string);
+
+    await expect(cache.get("tagged", ["users"], true, true)).resolves.toBeUndefined();
+    const keys = await storage.getKeys();
+    expect(keys.some((key) => key.includes("tagged"))).toBe(false);
+  });
+
   it("uses sorted tablesKey so table order does not matter", async () => {
     const storage = createStorage();
     const cache = unstorageCache({ storage, config: { ex: 60 } });

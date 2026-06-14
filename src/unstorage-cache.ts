@@ -64,6 +64,14 @@ export class UnstorageCache extends Cache {
       const entry = await this.storage.getItem<CacheEntry>(valueKey);
 
       if (!entry) {
+        await this.dropEntry({
+          autoInvalidate,
+          isTag,
+          keyEnc,
+          tablesKey: tablesKey ?? undefined,
+          fallbackTables: tablesKey ? decodeTablesKey(tablesKey) : [],
+          removeTagMap: true,
+        });
         this.log(`MISS tag ${key}`);
         return undefined;
       }
@@ -226,15 +234,20 @@ export class UnstorageCache extends Cache {
     }
 
     const valueKeys = new Set<string>();
+    const tagMapKeys = new Set<string>();
     for (const indexKey of indexKeys) {
       const parsed = parseIndexKey(indexKey);
       if (!parsed) continue;
       valueKeys.add(this.valueKey(true, parsed.isTag, parsed.keyEnc, parsed.tablesKey));
+      if (parsed.isTag) {
+        tagMapKeys.add(this.tagMapKey(parsed.keyEnc));
+      }
     }
 
     await Promise.all([
       ...Array.from(indexKeys).map((k) => this.storage.removeItem(k)),
       ...Array.from(valueKeys).map((k) => this.storage.removeItem(k)),
+      ...Array.from(tagMapKeys).map((k) => this.storage.removeItem(k)),
     ]);
 
     this.log(`INVALIDATE TABLES ${tables.join(",")} removed=${valueKeys.size}`);
