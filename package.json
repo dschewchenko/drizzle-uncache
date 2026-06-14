@@ -1,6 +1,6 @@
 {
   "name": "drizzle-uncache",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Cache adapter for Drizzle ORM v1 powered by unstorage",
   "license": "MIT",
   "author": "dschewchenko",
