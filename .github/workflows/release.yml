@@ -29,6 +29,8 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
 
       - name: Install
         run: bun install --frozen-lockfile
@@ -37,6 +39,6 @@ jobs:
         run: bun run build
 
       - name: Release
-        run: npm run release
+        run: bun run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
