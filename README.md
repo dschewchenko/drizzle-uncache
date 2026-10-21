@@ -30,31 +30,31 @@ yarn add drizzle-uncache unstorage drizzle-orm
 Postgres + redis
 
 ```ts
-import { Client } from "pg"
-import { drizzle } from "drizzle-orm/node-postgres"
-import { integer, pgTable, text } from "drizzle-orm/pg-core"
-import { createStorage } from "unstorage"
-import redisDriver from "unstorage/drivers/redis"
-import { unstorageCache } from "drizzle-uncache"
+import { Client } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { integer, pgTable, text } from "drizzle-orm/pg-core";
+import { createStorage } from "unstorage";
+import redisDriver from "unstorage/drivers/redis";
+import { unstorageCache } from "drizzle-uncache";
 
-const storage = createStorage({ driver: redisDriver({ url: process.env.REDIS_URL }) })
-const cache = unstorageCache({ storage, config: { ex: 60 } })
+const storage = createStorage({ driver: redisDriver({ url: process.env.REDIS_URL }) });
+const cache = unstorageCache({ storage, config: { ex: 60 } });
 
 const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
-})
+});
 
-const client = new Client({ connectionString: process.env.DATABASE_URL })
-await client.connect()
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+await client.connect();
 
-const db = drizzle(client, { schema: { users }, cache })
+const db = drizzle(client, { schema: { users }, cache });
 
 const all = await db
   .select()
   .from(users)
   .$withCache({ config: { ex: 60 } })
-  .all()
+  .all();
 ```
 
 ## Options
@@ -71,7 +71,6 @@ const all = await db
 ## Drivers
 
 This package does not ship any drivers. It uses `unstorage`, so any `unstorage` driver can be used.
-
 - `drizzle-uncache` is lightweight and does not add driver-specific dependencies.
 - Drivers list and docs: https://unstorage.unjs.io/drivers
 - Driver options and required dependencies are documented per driver. Some drivers need extra packages (they are optional peer deps of `unstorage`).
