@@ -2,9 +2,9 @@ import type { CacheConfig } from "drizzle-orm/cache/core/types";
 import type { Driver, Storage } from "unstorage";
 
 export type CacheEntry = {
-  value: unknown[];
+  value: Array<unknown>;
   expiresAt?: number;
-  tables?: string[];
+  tables?: Array<string>;
 };
 
 export type UnstorageCacheOptions = {

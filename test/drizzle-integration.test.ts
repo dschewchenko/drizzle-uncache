@@ -4,6 +4,7 @@ import type { RemoteCallback } from "drizzle-orm/pg-proxy";
 import { drizzle } from "drizzle-orm/pg-proxy";
 import { createStorage } from "unstorage";
 import { describe, expect, expectTypeOf, it } from "vitest";
+import type { UnstorageCacheOptions } from "../src/types";
 import { unstorageCache } from "../src/unstorage-cache";
 
 const users = pgTable("users", {
@@ -13,12 +14,12 @@ const users = pgTable("users", {
 
 type QueryCall = {
   sql: string;
-  params: unknown[];
+  params: Array<unknown>;
   method: "all" | "execute";
 };
 
 function createRemoteDb(options: { global?: boolean } = {}) {
-  const calls: QueryCall[] = [];
+  const calls: Array<QueryCall> = [];
   let selectedId = 0;
 
   const callback: RemoteCallback = async (sql, params, method) => {
@@ -32,11 +33,14 @@ function createRemoteDb(options: { global?: boolean } = {}) {
     return { rows: [] };
   };
 
-  const cache = unstorageCache({
+  const cacheOptions: UnstorageCacheOptions = {
     storage: createStorage(),
     config: { ex: 60 },
-    ...(options.global !== undefined ? { global: options.global } : {}),
-  });
+  };
+  if (options.global !== undefined) {
+    cacheOptions.global = options.global;
+  }
+  const cache = unstorageCache(cacheOptions);
 
   const db = drizzle(callback, { cache });
 

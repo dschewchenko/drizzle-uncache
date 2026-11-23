@@ -45,10 +45,10 @@ export class UnstorageCache extends Cache {
 
   override async get(
     key: string,
-    tables: string[],
+    tables: Array<string>,
     isTag: boolean,
     isAutoInvalidate?: boolean,
-  ): Promise<unknown[] | undefined> {
+  ): Promise<Array<unknown> | undefined> {
     const keyEnc = encode(key);
 
     if (isTag) {
@@ -124,8 +124,8 @@ export class UnstorageCache extends Cache {
 
   override async put(
     key: string,
-    response: unknown[],
-    tables: string[],
+    response: Array<unknown>,
+    tables: Array<string>,
     isTag: boolean,
     config?: CacheConfig,
   ): Promise<void> {
@@ -153,13 +153,15 @@ export class UnstorageCache extends Cache {
     const ttlSeconds =
       expiresAt !== undefined ? Math.max(1, Math.ceil((expiresAt - now) / 1000)) : undefined;
 
-    const entry: CacheEntry = {
-      value: response,
-      ...(expiresAt !== undefined ? { expiresAt } : {}),
-      ...(autoInvalidate ? { tables } : {}),
-    };
+    const entry: CacheEntry = { value: response };
+    if (expiresAt !== undefined) {
+      entry.expiresAt = expiresAt;
+    }
+    if (autoInvalidate) {
+      entry.tables = tables;
+    }
 
-    const writes: { key: string; value: StorageValue }[] = [{ key: valueKey, value: entry }];
+    const writes: Array<{ key: string; value: StorageValue }> = [{ key: valueKey, value: entry }];
 
     if (autoInvalidate && tablesKey) {
       const indexKeys = tables.map((table) => this.indexKey(table, tablesKey, isTag, keyEnc));
@@ -210,13 +212,17 @@ export class UnstorageCache extends Cache {
     this.log(`INVALIDATE TAG ${tag} removedIndex=${tables.length}`);
   }
 
-  private async invalidateTags(tags: string[]): Promise<void> {
-    if (!tags.length) return;
+  private async invalidateTags(tags: Array<string>): Promise<void> {
+    if (!tags.length) {
+      return;
+    }
     await Promise.all(tags.map((tag) => this.invalidateTag(tag)));
   }
 
-  private async invalidateTables(tables: string[]): Promise<void> {
-    if (!tables.length) return;
+  private async invalidateTables(tables: Array<string>): Promise<void> {
+    if (!tables.length) {
+      return;
+    }
 
     const indexKeys = new Set<string>();
     const tableIndexKeys = await Promise.all(
@@ -237,7 +243,9 @@ export class UnstorageCache extends Cache {
     const tagMapKeys = new Set<string>();
     for (const indexKey of indexKeys) {
       const parsed = parseIndexKey(indexKey);
-      if (!parsed) continue;
+      if (!parsed) {
+        continue;
+      }
       valueKeys.add(this.valueKey(true, parsed.isTag, parsed.keyEnc, parsed.tablesKey));
       if (parsed.isTag) {
         tagMapKeys.add(this.tagMapKey(parsed.keyEnc));
@@ -259,7 +267,7 @@ export class UnstorageCache extends Cache {
     keyEnc: string;
     tablesKey?: string | undefined;
     entry?: CacheEntry | null | undefined;
-    fallbackTables?: string[];
+    fallbackTables?: Array<string>;
     removeTagMap?: boolean;
   }): Promise<void> {
     const { autoInvalidate, isTag, keyEnc, tablesKey, entry, fallbackTables, removeTagMap } =
@@ -271,7 +279,9 @@ export class UnstorageCache extends Cache {
     if (isTag && removeTagMap) {
       await this.storage.removeItem(this.tagMapKey(keyEnc));
     }
-    if (!autoInvalidate || !tables.length || !resolvedTablesKey) return;
+    if (!autoInvalidate || !tables.length || !resolvedTablesKey) {
+      return;
+    }
 
     await Promise.all(
       tables.map((table) =>
@@ -322,16 +332,26 @@ export class UnstorageCache extends Cache {
       return now + DEFAULT_TTL_MS;
     }
 
-    if (source.px !== undefined) return now + source.px;
-    if (source.ex !== undefined) return now + source.ex * 1000;
-    if (source.pxat !== undefined) return source.pxat;
-    if (source.exat !== undefined) return source.exat * 1000;
+    if (source.px !== undefined) {
+      return now + source.px;
+    }
+    if (source.ex !== undefined) {
+      return now + source.ex * 1000;
+    }
+    if (source.pxat !== undefined) {
+      return source.pxat;
+    }
+    if (source.exat !== undefined) {
+      return source.exat * 1000;
+    }
 
     return now + DEFAULT_TTL_MS;
   }
 
   private log(message: string): void {
-    if (!this.debug) return;
+    if (!this.debug) {
+      return;
+    }
     console.log(`[uncache] ${message}`);
   }
 
@@ -340,7 +360,7 @@ export class UnstorageCache extends Cache {
   }
 
   private async setMany(
-    items: { key: string; value: StorageValue }[],
+    items: Array<{ key: string; value: StorageValue }>,
     ttlSeconds?: number,
   ): Promise<void> {
     const ttlOptions = this.ttlOptions(ttlSeconds);

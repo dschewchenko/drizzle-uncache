@@ -4,7 +4,9 @@ import type { CacheConfig } from "drizzle-orm/cache/core/types";
 const ORIGINAL_NAME = Symbol.for("drizzle:OriginalName");
 
 export function pickConfigWithTtl(config?: CacheConfig): CacheConfig | undefined {
-  if (!config) return undefined;
+  if (!config) {
+    return undefined;
+  }
   if (
     config.ex !== undefined ||
     config.px !== undefined ||
@@ -16,17 +18,24 @@ export function pickConfigWithTtl(config?: CacheConfig): CacheConfig | undefined
   return undefined;
 }
 
-export function normalizeTables(tables: MutationOption["tables"]): string[] {
-  if (!tables) return [];
+export function normalizeTables(tables: MutationOption["tables"]): Array<string> {
+  if (!tables) {
+    return [];
+  }
   const list = Array.isArray(tables) ? tables : [tables];
   return list.map((table) => {
-    if (typeof table === "string") return table;
-    return String(Reflect.get(table, ORIGINAL_NAME));
+    if (typeof table === "string") {
+      return table;
+    }
+    const originalName = ORIGINAL_NAME in table ? table[ORIGINAL_NAME] : undefined;
+    return String(originalName);
   });
 }
 
-export function normalizeTags(tags: MutationOption["tags"]): string[] {
-  if (!tags) return [];
+export function normalizeTags(tags: MutationOption["tags"]): Array<string> {
+  if (!tags) {
+    return [];
+  }
   return Array.isArray(tags) ? tags : [tags];
 }
 
@@ -34,16 +43,20 @@ export function encode(value: string): string {
   return encodeURIComponent(value);
 }
 
-export function makeTablesKey(tables: string[]): string {
-  if (!tables.length) return "";
+export function makeTablesKey(tables: Array<string>): string {
+  if (!tables.length) {
+    return "";
+  }
   return tables
     .map((table) => encode(table))
     .toSorted()
     .join(",");
 }
 
-export function decodeTablesKey(tablesKey: string | undefined): string[] {
-  if (!tablesKey) return [];
+export function decodeTablesKey(tablesKey: string | undefined): Array<string> {
+  if (!tablesKey) {
+    return [];
+  }
   return tablesKey.split(",").filter(Boolean).map(decodeURIComponent);
 }
 
@@ -56,10 +69,18 @@ export function parseIndexKey(key: string):
     }
   | undefined {
   const parts = key.split(":");
-  if (parts.length !== 5) return undefined;
-  if (parts[0] !== "__CTS__") return undefined;
+  if (parts.length !== 5) {
+    return undefined;
+  }
+  if (parts[0] !== "__CTS__") {
+    return undefined;
+  }
   const [tableEnc, tablesKey, kind, keyEnc] = parts.slice(1);
-  if (!tableEnc || !tablesKey || !keyEnc) return undefined;
-  if (kind !== "q" && kind !== "t") return undefined;
+  if (!tableEnc || !tablesKey || !keyEnc) {
+    return undefined;
+  }
+  if (kind !== "q" && kind !== "t") {
+    return undefined;
+  }
   return { tableEnc, tablesKey, isTag: kind === "t", keyEnc };
 }
